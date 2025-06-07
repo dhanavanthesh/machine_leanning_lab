@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum DNA Mutation Detection Pipeline</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="20" cy="20" r="2" fill="rgba(255,255,255,0.1)"/><circle cx="80" cy="40" r="1.5" fill="rgba(255,255,255,0.1)"/><circle cx="40" cy="70" r="1" fill="rgba(255,255,255,0.1)"/></svg>');
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            font-weight: 700;
+            margin-bottom: 10px;
+            position: relative;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+            position: relative;
+        }
+
+        .pipeline-container {
+            padding: 40px;
+        }
+
+        .phase-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 30px;
+            gap: 20px;
+        }
+
+        .phase-box {
+            flex: 1;
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            border-left: 5px solid;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .phase-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            opacity: 0.1;
+            transition: all 0.3s ease;
+        }
+
+        .phase-box:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+        }
+
+        .phase1 {
+            border-left-color: #e74c3c;
+        }
+        .phase1::before {
+            background: #e74c3c;
+        }
+
+        .phase2a {
+            border-left-color: #f39c12;
+        }
+        .phase2a::before {
+            background: #f39c12;
+        }
+
+        .phase2b {
+            border-left-color: #9b59b6;
+        }
+        .phase2b::before {
+            background: #9b59b6;
+        }
+
+        .phase3 {
+            border-left-color: #27ae60;
+        }
+        .phase3::before {
+            background: #27ae60;
+        }
+
+        .phase-title {
+            font-size: 1.4em;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .phase-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .phase1 .phase-icon { background: #e74c3c; }
+        .phase2a .phase-icon { background: #f39c12; }
+        .phase2b .phase-icon { background: #9b59b6; }
+        .phase3 .phase-icon { background: #27ae60; }
+
+        .phase-steps {
+            list-style: none;
+        }
+
+        .phase-steps li {
+            padding: 8px 0;
+            padding-left: 20px;
+            position: relative;
+            color: #555;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .phase-steps li:last-child {
+            border-bottom: none;
+        }
+
+        .phase-steps li::before {
+            content: '→';
+            position: absolute;
+            left: 0;
+            color: #3498db;
+            font-weight: bold;
+        }
+
+        .arrow {
+            font-size: 2em;
+            color: #3498db;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 40px;
+        }
+
+        .quantum-layer {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            margin: 30px 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .quantum-layer::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 10px,
+                rgba(255,255,255,0.05) 10px,
+                rgba(255,255,255,0.05) 20px
+            );
+            animation: quantum-pulse 3s linear infinite;
+        }
+
+        @keyframes quantum-pulse {
+            0% { transform: translateX(-50px) translateY(-50px); }
+            100% { transform: translateX(0px) translateY(0px); }
+        }
+
+        .quantum-layer h3 {
+            font-size: 1.3em;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .quantum-layer p {
+            position: relative;
+            z-index: 1;
+        }
+
+        .output-section {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-top: 30px;
+        }
+
+        .output-title {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .output-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .output-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .output-card h4 {
+            color: #3498db;
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+
+        .output-card p {
+            font-size: 0.95em;
+            line-height: 1.4;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        .pathogenic {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .confidence-high {
+            background: #27ae60;
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .phase-row {
+                flex-direction: column;
+            }
+            
+            .arrow {
+                transform: rotate(90deg);
+                margin: 10px 0;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .pipeline-container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧬 Quantum DNA Mutation Detection</h1>
+            <p>Advanced Pipeline for Genetic Analysis using Quantum Computing</p>
+        </div>
+        
+        <div class="pipeline-container">
+            <!-- Phase 1 -->
+            <div class="phase-row">
+                <div class="phase-box phase1">
+                    <div class="phase-title">
+                        <div class="phase-icon">1</div>
+                        DATA PREPARATION
+                    </div>
+                    <ul class="phase-steps">
+                        <li><strong>DNA Collection:</strong> NCBI/TCGA databases</li>
+                        <li><strong>Sequence Cleaning:</strong> Remove N bases, standardize</li>
+                        <li><strong>Fragmentation:</strong> Split into trinucleotides</li>
+                        <li><strong>Quality Control:</strong> Position tracking & labeling</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Quantum Layer -->
+            <div class="quantum-layer">
+                <h3>⚛️ QUANTUM ENCODING LAYER</h3>
+                <p>Bravyi-Kitaev Transformation: DNA → Qubits → Quantum States</p>
+            </div>
+
+            <!-- Phase 2A, 2B, 3 -->
+            <div class="phase-row">
+                <div class="phase-box phase2a">
+                    <div class="phase-title">
+                        <div class="phase-icon">2A</div>
+                        TRAINING
+                    </div>
+                    <ul class="phase-steps">
+                        <li><strong>Known Mutations:</strong> COSMIC/ClinVar data</li>
+                        <li><strong>VQC Training:</strong> Energy pattern learning</li>
+                        <li><strong>Signatures:</strong> Mutation fingerprints</li>
+                        <li><strong>Reference DB:</strong> Pattern library storage</li>
+                    </ul>
+                </div>
+                
+                <div class="arrow">⟷</div>
+                
+                <div class="phase-box phase2b">
+                    <div class="phase-title">
+                        <div class="phase-icon">2B</div>
+                        SIMULATION
+                    </div>
+                    <ul class="phase-steps">
+                        <li><strong>Target DNA:</strong> Patient sample input</li>
+                        <li><strong>VQE Circuit:</strong> Energy profile generation</li>
+                        <li><strong>Hamiltonian:</strong> Stability analysis</li>
+                        <li><strong>Quantum States:</strong> Molecular behavior</li>
+                    </ul>
+                </div>
+                
+                <div class="arrow">→</div>
+                
+                <div class="phase-box phase3">
+                    <div class="phase-title">
+                        <div class="phase-icon">3</div>
+                        VALIDATION
+                    </div>
+                    <ul class="phase-steps">
+                        <li><strong>Pattern Matching:</strong> Compare energy profiles</li>
+                        <li><strong>Classification:</strong> Mutation type & severity</li>
+                        <li><strong>Validation:</strong> TCGA/COSMIC cross-reference</li>
+                        <li><strong>Clinical Report:</strong> Actionable results</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Output Section -->
+            <div class="output-section">
+                <div class="output-title">📊 EXAMPLE DETECTION RESULTS</div>
+                <div class="output-grid">
+                    <div class="output-card">
+                        <h4>Gene Analysis</h4>
+                        <p><strong>Target:</strong> BRCA1<br>
+                        <strong>Mutation:</strong> c.68_69delAG<br>
+                        <strong>Type:</strong> Frameshift Deletion</p>
+                    </div>
+                    <div class="output-card">
+                        <h4>Quantum Analysis</h4>
+                        <p><strong>Energy Profile:</strong> [0.45→0.42→0.37→0.12*→0.48]<br>
+                        <strong>Position 4:</strong> Severe Drop Detected<br>
+                        <strong>Match:</strong> 93.4% Similarity</p>
+                    </div>
+                    <div class="output-card">
+                        <h4>Clinical Assessment</h4>
+                        <p><strong>Classification:</strong> <span class="status-badge pathogenic">PATHOGENIC</span><br>
+                        <strong>Confidence:</strong> <span class="status-badge confidence-high">93.4%</span><br>
+                        <strong>Action:</strong> Genetic Counseling</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
